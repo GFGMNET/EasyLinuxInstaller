@@ -1,0 +1,5 @@
+id: cuda
+unfree: true
+depends: [nvidia]
+debian:
+  packages: [cuda-toolkit]   # from NVIDIA's repository → newest CUDA

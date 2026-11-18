@@ -1,0 +1,22 @@
+:root { color-scheme: dark; --bg: #16181d; --fg: #e8eaef; --muted: #9aa3b2; --accent: #3d8bfd; --err: #ff6b6b; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg);
+  font: 18px/1.5 system-ui, "DejaVu Sans", sans-serif; }
+main { max-width: 900px; margin: 0 auto; padding: 6vh 24px 80px; }
+h1 { font-size: 2rem; margin: 0 0 1.5rem; }
+h2 { font-size: 1.4rem; font-weight: 500; }
+.hint { color: var(--muted); }
+.choices { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; margin: 24px 0; }
+.choices button { padding: 28px 16px; font-size: 1.3rem; border-radius: 10px; border: 2px solid #2c313b;
+  background: #20242c; color: var(--fg); cursor: pointer; }
+.choices button:hover, .choices button:focus { border-color: var(--accent); outline: none; }
+button { font: inherit; }
+button.link { background: none; border: none; color: var(--muted); cursor: pointer; padding: 0; }
+.bar { height: 18px; background: #2c313b; border-radius: 9px; overflow: hidden; margin: 24px 0 8px; }
+#bar-fill { height: 100%; width: 0; background: var(--accent); transition: width .5s; }
+pre { background: #0f1115; color: var(--muted); padding: 12px; border-radius: 8px; font-size: .75rem;
+  max-height: 40vh; overflow: auto; white-space: pre-wrap; }
+.error { border-left: 4px solid var(--err); padding: 4px 16px; margin: 16px 0; }
+.error p { color: var(--err); }
+.error button { padding: 8px 20px; border-radius: 8px; border: 1px solid var(--err); background: none; color: var(--fg); cursor: pointer; }
+footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 8px 24px; color: var(--muted); font-size: .8rem; }

@@ -1,0 +1,9 @@
+# Only for the automatic test install in GitHub Actions (not shown on real PCs).
+id: test-nixos
+name: Test NixOS
+os: nixos
+users:
+  - name: tester
+    password: tester-password
+    admin: true
+software: [htop]

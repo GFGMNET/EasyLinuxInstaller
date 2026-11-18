@@ -1,0 +1,75 @@
+# Automatic checks on every push: profiles, catalog, installer code, NixOS configs, Debian packages.
+# Profile changes are used immediately by the stick; these checks only report problems.
+name: Check
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    name: Profiles, catalog and installer tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.13" }
+      - run: pip install pyyaml pytest
+      - run: python tools/check.py validate
+      - run: python -m pytest -q installer/tests
+
+  debian:
+    name: Debian packages exist
+    runs-on: ubuntu-latest
+    container: debian:stable
+    steps:
+      - run: apt-get update && apt-get install -y --no-install-recommends python3 python3-yaml curl ca-certificates
+      - uses: actions/checkout@v4
+      - name: Check every Debian package can be installed
+        run: |
+          set -eu
+          python3 tools/check.py debian-plan > plan.json
+          cat plan.json
+          sed -i 's/^Components: .*/Components: main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources
+          for url in $(python3 -c 'import json;print(" ".join(json.load(open("plan.json"))["keyring_debs"]))'); do
+            curl -fsSL -o /tmp/keyring.deb "$url" && dpkg -i /tmp/keyring.deb
+          done
+          for arch in $(python3 -c 'import json;print(" ".join(json.load(open("plan.json"))["foreign_arch"]))'); do
+            dpkg --add-architecture "$arch"
+          done
+          apt-get update
+          apt-get install --simulate -y $(python3 -c 'import json;print(" ".join(json.load(open("plan.json"))["packages"]))') > /dev/null
+          echo "all Debian packages found"
+
+  nixos:
+    name: NixOS configs evaluate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - run: pip install pyyaml
+      - name: Evaluate every NixOS profile (newest stable channel, like the installer)
+        run: |
+          set -eu
+          python3 tools/check.py nixos-render "$RUNNER_TEMP/nixos" > hosts.json
+          python3 - <<'EOF' > targets.txt
+          import json
+          for h in json.load(open("hosts.json")):
+              print(h["dir"], h["host"])
+          EOF
+          while read -r dir host; do
+            echo "== $host"
+            nix eval --raw "path:$dir#nixosConfigurations.\"$host\".config.system.build.toplevel.drvPath"
+            echo
+          done < targets.txt
+      - name: Evaluate the live system (USB + PXE)
+        run: |
+          nix eval --raw .#nixosConfigurations.iso.config.system.build.isoImage.drvPath; echo
+          nix eval --raw .#packages.x86_64-linux.netboot.drvPath; echo

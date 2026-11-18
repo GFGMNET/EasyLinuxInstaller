@@ -1,0 +1,30 @@
+id: vllm
+depends: [nvidia, cuda]
+debian:
+  packages: [python3-venv]
+  venv:
+    path: /opt/vllm
+    pip: [vllm]               # newest vLLM from PyPI (brings its own CUDA runtime)
+  files:
+    - path: /etc/default/vllm
+      mode: "0644"
+      content: |
+        # Model to serve, e.g. VLLM_MODEL=Qwen/Qwen3-8B — then: systemctl enable --now vllm
+        VLLM_MODEL=
+        VLLM_ARGS=--host 0.0.0.0 --port 8000
+    - path: /etc/systemd/system/vllm.service
+      mode: "0644"
+      content: |
+        [Unit]
+        Description=vLLM OpenAI-compatible API server
+        After=network-online.target
+        Wants=network-online.target
+
+        [Service]
+        EnvironmentFile=/etc/default/vllm
+        ExecStart=/bin/sh -c 'exec /opt/vllm/bin/vllm serve "$VLLM_MODEL" $VLLM_ARGS'
+        Restart=on-failure
+
+        [Install]
+        WantedBy=multi-user.target
+  # not enabled by default: a model must be chosen first (/etc/default/vllm)

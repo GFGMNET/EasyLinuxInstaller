@@ -1,0 +1,17 @@
+# Profile: Games
+# The menu shows only the name. The language picked on the first screen sets
+# the system language and keyboard. The hostname is always "<id>-<mac>".
+id: games
+name: Games
+os: nixos                 # nixos | debian (always the newest stable release)
+requires:
+  gpu: nvidia             # nvidia | amd | any (optional)
+system:
+  timezone: Europe/Berlin
+users:
+  - name: admin
+    password: admin       # public! must be changed at first login
+    admin: true
+desktop: awesome
+drivers: [nvidia]
+software: [steam]

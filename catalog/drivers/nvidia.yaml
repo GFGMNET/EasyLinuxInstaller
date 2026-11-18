@@ -1,0 +1,14 @@
+id: nvidia
+unfree: true
+nixos:
+  config: |
+    services.xserver.videoDrivers = [ "nvidia" ];
+    hardware.graphics.enable = true;
+    hardware.nvidia.open = true;              # RTX 20xx / GTX 16xx and newer
+    hardware.nvidia.modesetting.enable = true;
+    hardware.nvidia.branch = "latest";        # newest driver (default would be "stable")
+debian:
+  # NVIDIA's own repository → always the newest driver. Never mix with Debian's nvidia-driver.
+  keyring_debs:
+    - https://developer.download.nvidia.com/compute/cuda/repos/debian{debian}/x86_64/cuda-keyring_1.1-1_all.deb
+  packages: [nvidia-open]

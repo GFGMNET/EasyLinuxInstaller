@@ -1,0 +1,7 @@
+id: awesome
+nixos:
+  config: |
+    services.xserver.enable = true;
+    services.xserver.windowManager.awesome.enable = true;
+    services.xserver.displayManager.lightdm.enable = true;
+    services.displayManager.defaultSession = "none+awesome";

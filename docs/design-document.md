@@ -1,6 +1,8 @@
 # EasyLinux Install — Design Document
 
-**Status:** Draft v0.5 · **Date:** 2026-11-16
+**Status:** v1.0 — implementation started · **Date:** 2026-11-18
+
+**Implementation note:** the automatic test install in GitHub Actions drives the same menu API from outside the VM (settings passed via QEMU `fw_cfg`). Real PCs always use the two screens.
 
 ---
 
@@ -13,13 +15,13 @@
 | D3 | **Secure Boot is off** on clients | The live system is built with **NixOS** |
 | D4 | Profiles choose the OS: **NixOS or Debian** | Profiles + software catalog + one installer backend per OS |
 | D5 | NVIDIA GPUs are **RTX 20xx or newer** | Open NVIDIA kernel module |
-| D6 | **Newest NVIDIA driver** | NixOS `nvidiaPackages.latest`; Debian uses NVIDIA's official repo (driver + CUDA) |
+| D6 | **Newest NVIDIA driver** | NixOS `hardware.nvidia.branch = "latest"`; Debian uses NVIDIA's official repo (driver + CUDA) |
 | D7 | **Internet is always available** during installation | Everything is downloaded at install time |
 | D8 | **1–5 clients** at a time | No local mirror needed |
 | D9 | vLLM on Debian: **Python environment** (`/opt/vllm`) + systemd service | — |
 | D10 | **Graphical menu = profile selection** | Kiosk web UI: choose a profile, then click Install |
 | D11 | **No disk encryption** | The password would have to be public in the profile, so it gives no real protection |
-| D12 | **Unattended mode installs immediately** | No countdown, no extra confirmation |
+| D12 | **Install starts immediately** after clicking a profile | No countdown, no extra confirmation (replaced the earlier unattended mode, see D28) |
 | D13 | **No `extra:` section** in profiles | Only names; unknown names install as normal packages |
 | D14 | **AMD GPUs** supported + `gpu-auto` | — |
 | D15 | **Remote UI with token** | The same menu in another PC's browser |
@@ -44,7 +46,7 @@
 
 ## 1. Goal
 
-A UEFI USB stick (PXE later). It boots, shows a **graphical profile selection**, and installs the chosen profile onto the **first internal disk**. It can also run **fully unattended**. Profiles decide the **OS (NixOS or Debian)**, desktop, drivers and software. Profiles live on GitHub and are **always downloaded fresh** at boot.
+A UEFI USB stick (PXE later). It boots, shows a **graphical profile selection**, and installs the chosen profile onto the **first internal disk**. Profiles decide the **OS (NixOS or Debian)**, desktop, drivers and software. Profiles live on GitHub and are **always downloaded fresh** at boot.
 
 | Profile | OS | Desktop | Drivers | Software |
 |---|---|---|---|---|
@@ -64,7 +66,7 @@ A UEFI USB stick (PXE later). It boots, shows a **graphical profile selection**,
  │   → Actions → ISO       │      (Release)        │                                  │
  │                         │                       │  Menu (kiosk) ◄─► Installer      │
  │ profiles/ catalog/      │── downloaded at boot ─►│  Remote UI    ◄─► daemon + API   │
- │   (no ISO rebuild)      │                       │  Answer file  ──►     │          │
+ │   (no ISO rebuild)      │                       │                       │          │
  └─────────────────────────┘                      │              Debian / NixOS       │
                                                   └───────────────────────┼──────────┘
                                                                           ▼
@@ -72,7 +74,7 @@ A UEFI USB stick (PXE later). It boots, shows a **graphical profile selection**,
 ```
 
 - Profiles say *what*, the catalog says *how* for each OS, and the backends do the work.
-- The installer is a **daemon with an API**. The menu, remote UI and unattended mode all use it.
+- The installer is a **daemon with an API**. The menu, the remote UI and the automatic test all use it.
 
 ---
 
@@ -95,10 +97,10 @@ A UEFI USB stick (PXE later). It boots, shows a **graphical profile selection**,
 ```yaml
 # profiles/games.yaml
 id: games
-name: "Gaming PC"
+name: Games
 os: nixos                    # nixos | debian — always newest stable (D19)
 requires: { gpu: nvidia }
-system: { locale: de_DE.UTF-8, timezone: Europe/Berlin, keyboard: de }   # hostname is always games-<mac> (D29)
+system: { timezone: Europe/Berlin }   # language + keyboard come from the menu (D28); hostname games-<mac> (D29)
 users:
   - { name: admin, password: admin, admin: true }   # must be changed at first login (D30)
 desktop: awesome
@@ -108,18 +110,18 @@ software: [steam]
 ```yaml
 # profiles/ai.yaml
 id: ai
-name: "AI Workstation"
+name: AI
 os: debian
-requires: { gpu: nvidia, min_ram_gb: 32 }
-system: { locale: de_DE.UTF-8, timezone: Europe/Berlin, keyboard: de }   # hostname: ai-<mac>
+requires: { gpu: nvidia }
+system: { timezone: Europe/Berlin }
 users:
   - { name: admin, password: admin, admin: true }
 desktop: kde
 drivers: [nvidia, cuda]
 software: [vllm]
 ```
-All values come from the profile; nothing is asked. To add software, add a name to `software:`.
-**First login:** the password is marked as expired (`chage -d 0` on Debian, the same expiry set at install time on NixOS), so the user must set a new one. SSH, if installed, only allows key login.
+All values come from the profile or the menu's language; nothing else is asked. To add software, add a name to `software:`.
+**First login:** with a desktop, a "set new password" window opens after every login until the password is changed (F1). Without a desktop, the password is marked as expired and the text console asks for a new one.
 
 ### 3.4 Software catalog (special cases only)
 A catalog entry only needs sections for the OSes of the profiles that actually use it.
@@ -186,7 +188,7 @@ Always the **first internal disk**: NVMe first, then SATA. **The USB stick itsel
 Each run: **checks** (3.10) → build ISO → test install in a VM → publish a GitHub Release + download page.
 
 ### 3.9 Hardware check
-Before installing, the live system looks at the PC's GPU, RAM and disk. If a profile needs something the PC doesn't have, for example `requires: { gpu: nvidia }` on a PC without an NVIDIA card, the profile shows a warning in the menu, or the unattended install stops. This prevents an install that "works" but leaves a broken desktop or a vLLM that cannot run.
+Before installing, the live system looks at the PC's GPU, RAM and disk. If a profile needs something the PC doesn't have, for example `requires: { gpu: nvidia }` on a PC without an NVIDIA card, an error message is shown instead of installing. This prevents an install that "works" but leaves a broken desktop or a vLLM that cannot run.
 
 ### 3.10 Automatic checks (CI)
 Before anything is published, GitHub checks:

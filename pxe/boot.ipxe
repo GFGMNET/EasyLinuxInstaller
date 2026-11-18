@@ -1,0 +1,9 @@
+#!ipxe
+# Loaded over HTTP from the same folder as bzImage, initrd and netboot.ipxe.
+# netboot.ipxe (from the Release) contains the exact kernel command line.
+chain netboot.ipxe || goto failed
+
+:failed
+echo EasyLinux: could not load netboot.ipxe from the server.
+sleep 10
+reboot

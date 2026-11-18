@@ -1,0 +1,15 @@
+# Profile: AI
+id: ai
+name: AI
+os: debian
+requires:
+  gpu: nvidia
+system:
+  timezone: Europe/Berlin
+users:
+  - name: admin
+    password: admin       # public! must be changed at first login
+    admin: true
+desktop: kde
+drivers: [nvidia, cuda]
+software: [vllm]

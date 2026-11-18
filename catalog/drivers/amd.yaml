@@ -1,0 +1,6 @@
+id: amd
+nixos:
+  config: |
+    hardware.graphics.enable = true;
+debian:
+  packages: [firmware-amd-graphics, mesa-vulkan-drivers]

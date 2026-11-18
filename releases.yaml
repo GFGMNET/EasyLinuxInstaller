@@ -1,0 +1,4 @@
+# Newest stable releases. The monthly build updates this file automatically
+# (source: endoflife.date). The installer downloads it together with the profiles.
+nixos: "26.05"
+debian: "13"

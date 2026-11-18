@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=EasyLinux first login
+Exec=/usr/local/bin/easylinux-first-login
+NoDisplay=true
+X-KDE-autostart-phase=2

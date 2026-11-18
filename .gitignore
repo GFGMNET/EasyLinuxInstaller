@@ -1,0 +1,9 @@
+result
+result-*
+out/
+*.qcow2
+vars.fd
+*-serial.log
+__pycache__/
+.pytest_cache/
+.venv*/

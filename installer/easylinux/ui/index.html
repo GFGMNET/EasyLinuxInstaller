@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EasyLinux Installer</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main>
+    <h1 id="title">EasyLinux Installer</h1>
+
+    <!-- Screen 1: language -->
+    <section id="screen-language">
+      <h2>Choose your language · Sprache wählen</h2>
+      <div class="choices">
+        <button data-lang="en">English</button>
+        <button data-lang="de">Deutsch</button>
+      </div>
+    </section>
+
+    <!-- Screen 2: profile names; a click starts the installation -->
+    <section id="screen-profiles" hidden>
+      <h2 data-t="choose_profile"></h2>
+      <p class="hint" data-t="install_hint"></p>
+      <p id="loading" data-t="loading" hidden></p>
+      <div id="profiles" class="choices"></div>
+      <div id="error" class="error" hidden>
+        <p id="error-text"></p>
+        <pre id="error-detail"></pre>
+        <button id="retry" data-t="retry"></button>
+      </div>
+      <button id="back" class="link" data-t="back"></button>
+    </section>
+
+    <!-- After the click: progress only -->
+    <section id="screen-progress" hidden>
+      <h2 id="installing"></h2>
+      <div class="bar"><div id="bar-fill"></div></div>
+      <p id="step"></p>
+      <pre id="log"></pre>
+      <div id="failed" class="error" hidden>
+        <p data-t="err_install"></p>
+        <pre id="failed-detail"></pre>
+        <button id="failed-retry" data-t="retry"></button>
+      </div>
+    </section>
+  </main>
+  <footer id="remote"></footer>
+  <script src="/app.js"></script>
+</body>
+</html>

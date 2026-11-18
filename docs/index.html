@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EasyLinux Installer</title>
+  <style>
+    body { font: 18px/1.6 system-ui, sans-serif; max-width: 760px; margin: 6vh auto; padding: 0 20px; color: #1d2330; }
+    a.button { display: inline-block; background: #3d8bfd; color: #fff; padding: 14px 26px; border-radius: 8px; text-decoration: none; }
+    code { background: #eef1f6; padding: 1px 6px; border-radius: 4px; }
+    .muted { color: #667085; }
+  </style>
+</head>
+<body>
+  <h1>EasyLinux Installer</h1>
+  <p>Bootable USB stick: pick a language, pick a profile, and it installs onto the first internal disk.</p>
+  <p><a class="button" href="https://github.com/GFGMNET/EasyLinuxInstaller/releases/latest/download/easylinux-x86_64.iso">Download the newest ISO</a></p>
+  <p class="muted">All versions and checksums: <a href="https://github.com/GFGMNET/EasyLinuxInstaller/releases">Releases</a></p>
+
+  <h2>Write the USB stick</h2>
+  <ul>
+    <li><strong>balenaEtcher</strong>: select the ISO and the stick, then click Flash.</li>
+    <li><strong>Rufus</strong>: when asked, choose <strong>DD mode</strong>.</li>
+    <li>Linux: <code>sudo dd if=easylinux-x86_64.iso of=/dev/sdX bs=4M status=progress oflag=sync</code></li>
+  </ul>
+
+  <h2>Requirements</h2>
+  <ul>
+    <li>UEFI PC with <strong>Secure Boot off</strong></li>
+    <li>Network cable with internet access (profiles and packages are downloaded during installation)</li>
+    <li>⚠️ The first internal disk is erased completely as soon as you click a profile.</li>
+  </ul>
+
+  <h2>Profiles</h2>
+  <p>Profiles live in <a href="https://github.com/GFGMNET/EasyLinuxInstaller/tree/main/profiles"><code>profiles/</code></a>
+     and are downloaded fresh at every boot. Changes take effect without a new ISO.</p>
+</body>
+</html>
