@@ -5,7 +5,7 @@ id: games
 name: Games
 os: nixos                 # nixos | debian (always the newest stable release)
 requires:
-  gpu: nvidia             # nvidia | amd | any (optional)
+  gpu: any             # nvidia | amd | any (optional)
 system:
   timezone: Europe/Berlin
 users:
@@ -14,4 +14,4 @@ users:
     admin: true
 desktop: awesome
 drivers: [nvidia]
-software: [steam]
+software: [steam, brave]
