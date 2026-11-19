@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 import urllib.error
@@ -28,12 +29,19 @@ def main() -> int:
     ap.add_argument("--token", required=True)
     ap.add_argument("--url", default="http://127.0.0.1:8080")
     ap.add_argument("--timeout", type=int, default=7200)
+    ap.add_argument("--pid", type=int, help="QEMU process; stop if it exits")
     a = ap.parse_args()
 
     deadline = time.time() + a.timeout
     seen: list[str] = []
     started = False
     while time.time() < deadline:
+        if a.pid:
+            try:
+                os.kill(a.pid, 0)
+            except OSError:
+                print("QEMU exited before the installation finished", flush=True)
+                return 1
         try:
             s = call(a.url, a.token, "/api/state")
         except (urllib.error.URLError, OSError, ValueError):

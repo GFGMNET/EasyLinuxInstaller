@@ -6,8 +6,24 @@ set -euo pipefail
 
 PROFILE="$1"; REF="$2"; ISO="$3"
 TOKEN="CI$(date +%s)"
-OVMF_CODE=/usr/share/OVMF/OVMF_CODE_4M.fd
-OVMF_VARS=/usr/share/OVMF/OVMF_VARS_4M.fd
+
+# Errors are also written as GitHub annotations (readable without logging in).
+annotate() {   # annotate <title> <file>: last lines of a file as one annotation
+  local text
+  text=$(tail -n 25 "$2" 2>/dev/null | tr -d '\r' | sed -e 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+  echo "::error title=$1::${text:-<empty>}"
+}
+fail() { echo "::error title=VM test ($PROFILE)::$*"; exit 1; }
+trap 'fail "line $LINENO: $BASH_COMMAND"' ERR
+
+# OVMF file names differ between Ubuntu versions → search.
+OVMF_CODE=$(ls /usr/share/OVMF/OVMF_CODE_4M.fd /usr/share/OVMF/OVMF_CODE.fd /usr/share/ovmf/OVMF.fd 2>/dev/null | head -n1 || true)
+OVMF_VARS=$(ls /usr/share/OVMF/OVMF_VARS_4M.fd /usr/share/OVMF/OVMF_VARS.fd 2>/dev/null | head -n1 || true)
+if [ -z "$OVMF_CODE" ] || [ -z "$OVMF_VARS" ]; then
+  fail "OVMF not found: $(ls /usr/share/OVMF /usr/share/ovmf 2>&1 | tr '\n' ' ')"
+fi
+[ -f "$ISO" ] || fail "ISO not found: $ISO"
+echo "OVMF: $OVMF_CODE / $OVMF_VARS"
 
 qemu-img create -f qcow2 disk.qcow2 40G
 cp "$OVMF_VARS" vars.fd
@@ -25,11 +41,19 @@ qemu-system-x86_64 "${COMMON[@]}" -cdrom "$ISO" \
   -fw_cfg "name=opt/easylinux/ref,string=$REF" \
   -fw_cfg "name=opt/easylinux/profiles_path,string=tests/profiles" \
   -fw_cfg "name=opt/easylinux/after_install,string=poweroff" \
-  -serial file:install-serial.log &
+  -serial file:install-serial.log 2> qemu-stderr.log &
 QEMU=$!
+trap - ERR
 rc=0
-python3 tools/ci-install.py --profile "$PROFILE" --token "$TOKEN" --timeout 9000 || rc=$?
-if [ "$rc" -ne 0 ]; then tail -n 100 install-serial.log || true; kill "$QEMU" || true; exit "$rc"; fi
+python3 tools/ci-install.py --profile "$PROFILE" --token "$TOKEN" --pid "$QEMU" --timeout 9000 > install-api.log 2>&1 || rc=$?
+cat install-api.log
+if [ "$rc" -ne 0 ]; then
+  kill "$QEMU" 2>/dev/null || true
+  annotate "Install $PROFILE failed" install-api.log
+  annotate "VM console during install ($PROFILE)" install-serial.log
+  [ -s qemu-stderr.log ] && annotate "QEMU errors ($PROFILE)" qemu-stderr.log
+  exit 1
+fi
 wait "$QEMU" || true      # the installer powers the VM off
 echo "::endgroup::"
 
@@ -43,6 +67,6 @@ for _ in $(seq 1 180); do      # up to 30 minutes
   fi
   sleep 10
 done
-tail -n 100 boot-serial.log || true
-kill "$QEMU" || true
-echo "no login prompt"; exit 1
+kill "$QEMU" 2>/dev/null || true
+annotate "Boot $PROFILE failed (no login prompt)" boot-serial.log
+exit 1

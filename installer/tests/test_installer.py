@@ -14,12 +14,25 @@ from easylinux.settings import parse_cmdline  # noqa: E402
 from easylinux.util import LANGUAGES  # noqa: E402
 
 CATALOG, CAT_ERRORS = load_catalog(ROOT / "catalog")
-PROFILES = {p.id: p for p in load_profiles(ROOT / "profiles")[0]}
+
+# Fixed example profiles: the tests must not depend on what is in profiles/ (that can change any time).
+USERS = [{"name": "admin", "password": "admin", "admin": True}]
+PROFILES = {
+    "games": parse_profile({"id": "games", "name": "Games", "os": "nixos", "requires": {"gpu": "nvidia"},
+                            "system": {"timezone": "Europe/Berlin"}, "users": USERS,
+                            "desktop": "awesome", "drivers": ["nvidia"], "software": ["steam"]}),
+    "ai": parse_profile({"id": "ai", "name": "AI", "os": "debian", "requires": {"gpu": "nvidia"},
+                         "users": USERS, "desktop": "kde", "drivers": ["nvidia", "cuda"], "software": ["vllm"]}),
+}
 
 
 def test_repo_profiles_and_catalog_load():
+    """Whatever is in profiles/ must load and resolve (content is not checked)."""
     assert CAT_ERRORS == []
-    assert set(PROFILES) == {"games", "ai"}
+    profiles, errors = load_profiles(ROOT / "profiles")
+    assert errors == [] and profiles
+    for prof in profiles:
+        resolve(prof, CATALOG, None)
 
 
 def test_games_plan():
