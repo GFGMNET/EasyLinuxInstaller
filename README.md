@@ -13,6 +13,10 @@ A bootable UEFI USB stick (or PXE network boot) that installs a Linux profile on
 **Download:** [newest ISO](https://github.com/GFGMNET/EasyLinuxInstaller/releases/latest/download/easylinux-x86_64.iso)
 Write it with balenaEtcher, or with Rufus in **DD mode**. UEFI only, Secure Boot off, network cable required.
 
+## 👉 How to add software, change or add profiles
+
+See **[docs/how-to.md](docs/how-to.md)**. In short: add the name to `software:` in `profiles/<profile>.yaml` on GitHub, and that's it.
+
 ## How it works
 
 - `profiles/`: one YAML file per profile. They are **downloaded at every boot**, so a change works without a new ISO.
